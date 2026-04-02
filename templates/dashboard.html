@@ -13,13 +13,13 @@
           <span class="status-dot online"></span> SmartHR Control Center
         </span>
       </div>
-      <h2 style="font-family:var(--font-display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;color:#fff;letter-spacing:-0.04em;line-height:1.15;margin-bottom:0.5rem;">
+      <h2 style="font-family:var(--font-display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;color:var(--color-text);letter-spacing:-0.04em;line-height:1.15;margin-bottom:0.5rem;">
         Good to see you,<br>
         <span style="background:linear-gradient(90deg,var(--color-primary),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
           {{ session.get('full_name', 'Guest').split()[0] }}.
         </span>
       </h2>
-      <p style="color:rgba(255,255,255,0.55);font-size:0.875rem;line-height:1.6;margin-bottom:1.5rem;">
+      <p style="color:var(--color-text-muted);font-size:0.875rem;line-height:1.6;margin-bottom:1.5rem;">
         Your workforce overview is live. Explore analytics, manage leaves, or run the AI chatbot.
       </p>
       <div class="d-flex flex-wrap gap-2">
@@ -47,18 +47,18 @@
       <div class="glass-card p-4">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
-            <div style="color:rgba(255,255,255,0.4);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem;">Live Clock</div>
+            <div style="color:var(--color-text-muted);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem;">Live Clock</div>
             <div id="liveTime" style="font-family:var(--font-display);font-size:1.7rem;font-weight:700;color:var(--color-primary);letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1;">--:--:--</div>
           </div>
           <div class="text-end">
-            <div style="color:rgba(255,255,255,0.4);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem;">Today</div>
-            <div id="liveDate" style="font-size:0.8rem;color:rgba(255,255,255,0.7);font-weight:500;">--</div>
+            <div style="color:var(--color-text-muted);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem;">Today</div>
+            <div id="liveDate" style="font-size:0.8rem;color:var(--color-text);font-weight:500;">--</div>
           </div>
         </div>
-        <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:0.85rem;">
-          <div style="color:rgba(255,255,255,0.3);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:0.35rem;">Quote of the Day</div>
-          <div id="quoteText" style="font-size:0.8rem;color:rgba(255,255,255,0.65);font-style:italic;line-height:1.55;min-height:2.5em;">Loading…</div>
-          <div id="quoteAuthor" style="font-size:0.68rem;color:rgba(255,255,255,0.25);margin-top:0.35rem;">SmartHR</div>
+        <div style="border-top:1px solid var(--color-border);padding-top:0.85rem;">
+          <div style="color:var(--color-text-muted);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:0.35rem;">Quote of the Day</div>
+          <div id="quoteText" style="font-size:0.8rem;color:var(--color-text);font-style:italic;line-height:1.55;min-height:2.5em;">Loading…</div>
+          <div id="quoteAuthor" style="font-size:0.68rem;color:var(--color-text-muted);margin-top:0.35rem;">SmartHR</div>
         </div>
       </div>
     </div>
@@ -215,6 +215,50 @@
 
 </div>
 
+<!-- ── Charts Row 3 (New Features) ──────────────────────────────────── -->
+<div class="row g-3 mb-3 fade-in" style="animation-delay:0.45s;">
+  <!-- Flight Risk Predictor -->
+  <div class="col-md-4">
+    <div class="card border-0 h-100" style="background:var(--color-surface);position:relative;overflow:hidden;">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-exclamation-triangle-fill me-2" style="color:var(--color-danger);"></i>Flight Risk Predictor</span>
+        <span class="badge" style="background:rgba(239,68,68,0.15);color:var(--color-danger);font-size:0.6rem;">AI ENGINE</span>
+      </div>
+      <div class="card-body p-0" style="min-height:240px; max-height:240px; overflow-y:auto;">
+        <ul class="list-group list-group-flush" id="flightRiskList" style="background:transparent;">
+          <li class="list-group-item bg-transparent text-center py-4" style="border:none;">
+             <span class="spinner-border spinner-border-sm text-danger"></span> Loading AI Insights...
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Corporate Skills Cloud -->
+  <div class="col-md-4">
+    <div class="card border-0 h-100" style="background:var(--color-surface);">
+      <div class="card-header">
+        <i class="bi bi-lightbulb-fill me-2" style="color:#00d4ff;"></i>Corporate Skills Matrix
+      </div>
+      <div class="card-body d-flex flex-wrap align-content-start gap-2" id="skillsCloud" style="padding:1.4rem; min-height:240px; max-height:240px; overflow-y:auto;">
+         <span style="color:var(--color-text-muted);">Analyzing workforce skills...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Trend -->
+  <div class="col-md-4">
+    <div class="card border-0 h-100" style="background:var(--color-surface);">
+      <div class="card-header">
+        <i class="bi bi-person-lines-fill me-2" style="color:var(--color-success);"></i>Onboarding Trend
+      </div>
+      <div class="card-body" style="padding:1.25rem; min-height:240px; display:flex; flex-direction:column; justify-content:center;">
+        <div class="chart-wrap" style="height:100%; min-height:200px;"><canvas id="joiningTrendChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── 3D Department Globe ────────────────────────────── -->
 <div class="row g-3 fade-in" style="animation-delay:0.5s;">
   <div class="col-12">
@@ -253,7 +297,10 @@ document.addEventListener('DOMContentLoaded', function () {
     renderSentimentBars(),
     renderAttendanceLine(),
     renderSalaryBars(),
-    renderPerformanceLine()
+    renderPerformanceLine(),
+    renderJoiningTrend(),
+    loadFlightRisk(),
+    loadSkillsCloud()
   ]);
 
   initTiltCards();
@@ -582,6 +629,93 @@ function initTiltCards() {
       card.style.transform = '';
     });
   });
+}
+
+/* ── New Features ── */
+async function renderJoiningTrend() {
+  try {
+    var r = await fetch('/api/analytics/joining-trend');
+    var d = await r.json();
+    var ctx = document.getElementById('joiningTrendChart').getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 0, 180);
+    grad.addColorStop(0, 'rgba(16,185,129,0.3)');
+    grad.addColorStop(1, 'rgba(16,185,129,0.0)');
+    var opts = Object.assign({}, darkChartDefaults());
+    opts.plugins = { legend: { display: false }, tooltip: darkChartDefaults().plugins.tooltip };
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: d.map(function(x){ return x.month; }),
+        datasets: [{
+          label: 'Joined',
+          data: d.map(function(x){ return x.count; }),
+          borderColor: '#10b981',
+          backgroundColor: grad,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: '#10b981',
+          borderWidth: 2.5
+        }]
+      },
+      options: opts
+    });
+  } catch(e) {}
+}
+
+async function loadFlightRisk() {
+  try {
+    var list = document.getElementById('flightRiskList');
+    var r = await fetch('/api/analytics/flight-risk');
+    var d = await r.json();
+    if(!d.length) {
+      list.innerHTML = '<li class="list-group-item bg-transparent text-center" style="color:var(--color-text-muted);border:none;">No critical data</li>';
+      return;
+    }
+    list.innerHTML = d.map(function(emp) {
+      var color = emp.risk_score > 70 ? 'var(--color-danger)' : (emp.risk_score > 40 ? 'var(--color-warning)' : 'var(--color-success)');
+      var riskColor = emp.risk_score > 70 ? 'rgba(239,68,68,0.1)' : (emp.risk_score > 40 ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)');
+      return '<li class="list-group-item bg-transparent d-flex justify-content-between align-items-center" style="border-bottom:1px solid var(--color-border);padding:0.8rem 1.2rem;">'+
+        '<div>'+
+           '<div style="font-weight:600;font-size:0.88rem;color:var(--color-text);">'+SmartHR.escapeHtml(emp.name)+'</div>'+
+           '<div style="font-size:0.72rem;color:var(--color-text-muted);">'+SmartHR.escapeHtml(emp.designation)+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;">'+
+           '<div class="badge" style="background:'+riskColor+';color:'+color+';font-size:0.75rem;letter-spacing:0.05em;">'+emp.risk_score+'% RISK</div>'+
+        '</div>'+
+      '</li>';
+    }).join('');
+  } catch(e) {}
+}
+
+async function loadSkillsCloud() {
+  try {
+    var container = document.getElementById('skillsCloud');
+    var r = await fetch('/api/analytics/skills');
+    var d = await r.json();
+    if(!d.length) {
+      container.innerHTML = '<span style="color:var(--color-text-muted);">No skills data mapped yet.</span>';
+      return;
+    }
+    // Calculate max weight for font scaling
+    var maxWeight = Math.max.apply(Math, d.map(function(s){return s.weight;}));
+    container.innerHTML = d.map(function(s, idx) {
+      var ratio = s.weight / maxWeight;
+      var fontSize = 0.75 + (ratio * 0.7); // 0.75rem to 1.45rem
+      var opacity = 0.5 + (ratio * 0.5);   // 0.5 to 1.0
+      var color = PALETTE[idx % PALETTE.length];
+      return '<span class="skill-tag" style="font-size:'+fontSize+'rem;opacity:'+opacity+';border:1px solid '+neonColor(color,0.3)+';background:'+neonColor(color,0.1)+';color:'+color+';pointer-events:none;transition:transform 0.2s;">' + 
+             SmartHR.escapeHtml(s.text) + 
+             '</span>';
+    }).join('');
+    
+    // Add simple hover effect
+    var tags = container.querySelectorAll('.skill-tag');
+    tags.forEach(function(tag) {
+      tag.addEventListener('mouseenter', function(){ tag.style.transform='scale(1.1) translateY(-2px)'; tag.style.opacity='1'; tag.style.zIndex='10'; });
+      tag.addEventListener('mouseleave', function(){ tag.style.transform=''; tag.style.zIndex=''; });
+    });
+  } catch(e) {}
 }
 </script>
 {% endblock %}

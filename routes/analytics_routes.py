@@ -144,6 +144,52 @@ def dept_sentiment():
         for r in rows
     ])
 
+# ── Flight Risk Predictor ─────────────────────────────────────────────────────
+@analytics_bp.route("/flight-risk", methods=["GET"])
+def flight_risk():
+    """
+    Flight Risk = based on low sentiment.
+    """
+    rows = (
+        db.session.query(
+            Employee.id,
+            Employee.name,
+            Employee.department,
+            Employee.designation,
+            func.avg(Feedback.sentiment_score).label("avg_sent")
+        )
+        .outerjoin(Feedback, Employee.id == Feedback.employee_id)
+        .filter(Employee.is_active == True)
+        .group_by(Employee.id)
+        .order_by(func.avg(Feedback.sentiment_score).asc())
+        .limit(6)
+        .all()
+    )
+    # If no feedback, assume neutral (0).
+    return jsonify([
+        {
+            "id": r[0], 
+            "name": r[1], 
+            "department": r[2], 
+            "designation": r[3],
+            "risk_score": round(((1 - ((r[4] if r[4] is not None else 0.0) + 1)/2)) * 100)
+        }
+        for r in rows
+    ])
+
+# ── Skills Distribution ───────────────────────────────────────────────────────
+@analytics_bp.route("/skills", methods=["GET"])
+def skills_distribution():
+    from collections import Counter
+    employees = Employee.query.filter_by(is_active=True).all()
+    counter = Counter()
+    for e in employees:
+        if e.skills:
+            for s in [x.strip() for x in e.skills.split(",") if x.strip()]:
+                counter[s] += 1
+    top_skills = counter.most_common(30)
+    return jsonify([{"text": s[0], "weight": s[1]} for s in top_skills])
+
 
 
 # ── POST submit feedback (runs NLP sentiment) ─────────────────────────────────

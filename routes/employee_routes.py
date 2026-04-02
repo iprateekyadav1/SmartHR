@@ -62,8 +62,19 @@ def get_employees():
             (Employee.email.ilike(f"%{search}%"))
         )
 
-    employees = query.order_by(Employee.created_at.desc()).all()
-    return jsonify([e.to_dict() for e in employees])
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 15, type=int)
+
+    pagination = query.order_by(Employee.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    
+    return jsonify({
+        "employees": [e.to_dict() for e in pagination.items],
+        "total": pagination.total,
+        "page": pagination.page,
+        "pages": pagination.pages,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev
+    })
 
 
 # ── POST create employee ──────────────────────────────────────────────────────

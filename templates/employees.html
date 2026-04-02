@@ -39,7 +39,7 @@
 <div class="card border-0 fade-in" style="animation-delay:0.08s;">
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table align-middle mb-0" id="empTable">
+      <table class="table align-middle mb-0 emp-table" id="empTable">
         <thead>
           <tr>
             <th class="ps-4" style="width:280px;">Employee</th>
@@ -59,6 +59,18 @@
           </td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+  
+  <!-- Pagination Controls -->
+  <div class="card-footer" style="background:transparent;border-top:1px solid var(--color-border);padding:1rem;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div style="font-size:0.8rem;color:var(--color-text-muted);" id="paginationInfo">
+        Loading...
+      </div>
+      <div class="d-flex gap-2" id="paginationControls">
+        <!-- Rendered via JS -->
+      </div>
     </div>
   </div>
 </div>
@@ -159,6 +171,33 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+  
+  /* Premium Employee Table Styles */
+  .emp-table th {
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border) !important;
+    padding-bottom: 1rem;
+  }
+  .emp-table td {
+    border-bottom: 1px solid var(--color-border-2) !important;
+    padding: 1.1rem 0.5rem;
+    color: var(--color-text);
+  }
+  .emp-row {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+  }
+  .emp-row:hover {
+    background: var(--color-surface-2);
+    transform: translateY(-2px) translateX(4px);
+    box-shadow: inset 2px 0 0 var(--color-primary), inset 0 1px 0 var(--color-border-2), inset 0 -1px 0 var(--color-border-2);
+  }
+  .emp-row td {
+    transition: color 0.3s ease;
+  }
 </style>
 <script>
 var DEPT_COLORS = {
@@ -172,33 +211,88 @@ var DEPT_COLORS = {
   'Design':      ['rgba(249,115,22,0.12)','#fb923c']
 };
 
+var currentPage = 1;
+
 document.addEventListener('DOMContentLoaded', loadEmployees);
 
 var searchTimer;
 document.getElementById('searchInput').addEventListener('input', function() {
   clearTimeout(searchTimer);
+  currentPage = 1; // reset to first page on new search
   searchTimer = setTimeout(loadEmployees, 350);
 });
-document.getElementById('deptFilter').addEventListener('change', loadEmployees);
+document.getElementById('deptFilter').addEventListener('change', function() {
+  currentPage = 1; // reset to first page on filter change
+  loadEmployees();
+});
+
+function changePage(newPage) {
+  currentPage = newPage;
+  loadEmployees();
+}
 
 async function loadEmployees() {
   var search = document.getElementById('searchInput').value;
   var dept   = document.getElementById('deptFilter').value;
-  var url    = '/api/employees?active=true';
+  var url    = '/api/employees?active=true&page=' + currentPage;
   if (search) url += '&search=' + encodeURIComponent(search);
   if (dept)   url += '&department=' + encodeURIComponent(dept);
 
   try {
     var r    = await fetch(url);
-    var data = await r.json();
+    var responseData = await r.json();
+    
+    // Check if paginated response or old flat response
+    var data = responseData.employees || responseData; 
+    
     renderEmployeeTable(data);
+    
+    if (responseData.pages !== undefined) {
+      document.getElementById('empCount').textContent = responseData.total + ' employees';
+      renderPagination(responseData);
+    } else {
+      document.getElementById('empCount').textContent = data.length + ' employees';
+    }
   } catch(e) {}
+}
+
+function renderPagination(meta) {
+  var info = document.getElementById('paginationInfo');
+  var controls = document.getElementById('paginationControls');
+  
+  if (meta.total === 0) {
+    info.textContent = 'No employees matched your criteria.';
+    controls.innerHTML = '';
+    return;
+  }
+  
+  var startItem = ((meta.page - 1) * 15) + 1;
+  var endItem = Math.min(meta.page * 15, meta.total);
+  info.textContent = 'Showing ' + startItem + ' to ' + endItem + ' of ' + meta.total + ' entries';
+  
+  var html = '';
+  html += '<button class="btn btn-sm btn-ghost" ' + (!meta.has_prev ? 'disabled' : '') + ' onclick="changePage(' + (meta.page - 1) + ')"><i class="bi bi-chevron-left"></i> Prev</button>';
+  
+  // Page numbers
+  var maxPagesToShow = 5;
+  var startPage = Math.max(1, meta.page - Math.floor(maxPagesToShow / 2));
+  var endPage = Math.min(meta.pages, startPage + maxPagesToShow - 1);
+  if (endPage - startPage + 1 < maxPagesToShow) {
+    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+  }
+  
+  for (var i = startPage; i <= endPage; i++) {
+    var activeClass = i === meta.page ? 'btn-primary' : 'btn-ghost';
+    html += '<button class="btn btn-sm ' + activeClass + '" onclick="changePage(' + i + ')">' + i + '</button>';
+  }
+  
+  html += '<button class="btn btn-sm btn-ghost" ' + (!meta.has_next ? 'disabled' : '') + ' onclick="changePage(' + (meta.page + 1) + ')">Next <i class="bi bi-chevron-right"></i></button>';
+  
+  controls.innerHTML = html;
 }
 
 function renderEmployeeTable(data) {
   var tbody  = document.getElementById('empBody');
-  var countEl = document.getElementById('empCount');
-  countEl.textContent = data.length + ' employees';
 
   if (!data.length) {
     tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>No employees found.</p></div></td></tr>';
@@ -211,7 +305,7 @@ function renderEmployeeTable(data) {
     var initials = e.name.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('');
     var net      = Math.round((e.salary || 0) * 0.88); // approx net after deductions
 
-    return '<tr class="fade-in">' +
+    return '<tr class="emp-row fade-in">' +
       '<td class="ps-4">' +
         '<div class="d-flex align-items-center gap-2">' +
           '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--color-primary),var(--color-secondary));display:grid;place-items:center;font-family:var(--font-display);font-size:0.8rem;font-weight:700;color:#0a0f1e;flex-shrink:0;">' +
