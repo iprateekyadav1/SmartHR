@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% block title %}Payroll{% endblock %}
+{% block nav_title %}Payroll Engine{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ──────────────────────────────────── -->
+<div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4 fade-in">
+  <div>
+    <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;margin:0;">
+      <i class="bi bi-wallet2 me-2" style="color:var(--color-primary);"></i>Payroll Engine
+    </h2>
+    <p style="font-size:0.825rem;color:var(--color-text-muted);margin:0.2rem 0 0;">
+      Calculate net salary, view breakdowns, and download payslip PDFs.
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" onclick="runPayroll()">
+      <i class="bi bi-play-circle me-1"></i>Run Payroll
+    </button>
+    <button class="btn btn-ghost" onclick="exportPayrollCSV()">
+      <i class="bi bi-download me-1"></i>Export CSV
+    </button>
+  </div>
+</div>
+
+<!-- ── Payroll Calculator Panel ─────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Search & Select Employee -->
+  <div class="col-lg-4 fade-in" style="animation-delay:0.05s;">
+    <div class="card border-0 h-100">
+      <div class="card-header">
+        <i class="bi bi-person-badge me-2" style="color:var(--color-primary);"></i>Select Employee
+      </div>
+      <div class="card-body d-flex flex-column gap-3">
+        <div>
+          <label class="form-label">Employee ID</label>
+          <div class="d-flex gap-2">
+            <input type="number" id="payEmpId" class="form-control" placeholder="e.g. 1" min="1" max="200">
+            <button class="btn btn-outline-primary" onclick="fetchEmployeePayroll()">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Pay Period</label>
+          <input type="month" id="payPeriod" class="form-control"
+                 value="{{ ''|default('') }}" id="payPeriodInput">
+        </div>
+        <div>
+          <label class="form-label">Bonus Amount (₹)</label>
+          <input type="number" id="bonusInput" class="form-control" placeholder="0" min="0" value="0">
+        </div>
+        <button class="btn btn-primary mt-auto" onclick="calculateNetSalary()">
+          <i class="bi bi-calculator me-1"></i>Calculate Net Salary
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Salary Breakdown -->
+  <div class="col-lg-5 fade-in" style="animation-delay:0.1s;">
+    <div class="card border-0 h-100">
+      <div class="card-header">
+        <i class="bi bi-receipt me-2" style="color:var(--color-success);"></i>Salary Breakdown
+      </div>
+      <div class="card-body" id="salaryBreakdownPanel">
+        <div class="empty-state">
+          <i class="bi bi-calculator"></i>
+          <p>Select an employee and click "Calculate Net Salary"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee Info -->
+  <div class="col-lg-3 fade-in" style="animation-delay:0.15s;">
+    <div class="card border-0 h-100">
+      <div class="card-header">
+        <i class="bi bi-person-circle me-2" style="color:#a78bfa;"></i>Employee Info
+      </div>
+      <div class="card-body" id="empInfoPanel">
+        <div class="empty-state">
+          <i class="bi bi-person"></i>
+          <p>Employee details will appear here</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Payslip Preview ───────────────────────────────── -->
+<div class="row g-3 mb-4 fade-in" style="animation-delay:0.2s;" id="payslipPreviewSection" style="display:none!important;">
+  <div class="col-12">
+    <div class="payslip-card">
+      <div class="payslip-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--color-primary),var(--color-secondary));border-radius:12px;display:grid;place-items:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <circle cx="9" cy="7" r="3.5" stroke="#0a0f1e" stroke-width="1.8" fill="none"/>
+              <path d="M2 20c0-4 3.1-7 7-7" stroke="#0a0f1e" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M16 12l1.5 3h3L18 17.5l1 3L16 19l-3 1.5 1-3L11.5 15h3L16 12z" fill="#0a0f1e"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:800;color:#fff;">SmartHR</div>
+            <div style="font-size:0.7rem;color:var(--color-text-muted);">AI-Powered HR Platform</div>
+          </div>
+        </div>
+        <div class="text-end">
+          <div style="font-size:0.7rem;color:var(--color-text-muted);">SALARY SLIP</div>
+          <div id="previewPeriod" style="font-size:0.9rem;font-weight:600;color:var(--color-primary);"></div>
+        </div>
+      </div>
+
+      <div class="p-4">
+        <!-- Employee details row -->
+        <div class="row g-3 mb-4" id="previewEmpDetails">
+          <div class="col-md-8">
+            <div id="previewEmpName" style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--color-text);"></div>
+            <div id="previewEmpRole" style="font-size:0.825rem;color:var(--color-text-muted);margin-top:2px;"></div>
+            <div id="previewEmpId" style="font-size:0.78rem;color:var(--color-text-muted);margin-top:4px;"></div>
+          </div>
+          <div class="col-md-4 text-end">
+            <div style="font-size:0.7rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.07em;">Net Pay</div>
+            <div id="previewNetPay" style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--color-primary);letter-spacing:-0.03em;"></div>
+            <div style="font-size:0.72rem;color:var(--color-success);margin-top:2px;"><i class="bi bi-check-circle-fill me-1"></i>Credited</div>
+          </div>
+        </div>
+
+        <!-- Salary table -->
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem;">Earnings</div>
+            <div id="previewEarnings"></div>
+          </div>
+          <div class="col-md-6">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--color-danger);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem;">Deductions</div>
+            <div id="previewDeductions"></div>
+          </div>
+        </div>
+
+        <!-- Net total bar -->
+        <div class="mt-4 p-3 rounded-3" style="background:var(--color-primary-dim);border:1px solid rgba(0,212,255,0.2);">
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-weight:700;color:var(--color-text);font-family:var(--font-display);">
+              <i class="bi bi-cash-coin me-2" style="color:var(--color-primary);"></i>Net Salary Payable
+            </span>
+            <span id="previewFinalNet" style="font-family:var(--font-display);font-size:1.3rem;font-weight:800;color:var(--color-primary);"></span>
+          </div>
+        </div>
+
+        <!-- Download button -->
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <button class="btn btn-ghost btn-sm" onclick="printPayslip()">
+            <i class="bi bi-printer me-1"></i>Print
+          </button>
+          <button class="btn btn-primary" id="downloadPdfBtn" onclick="downloadPayslipPDF()">
+            <i class="bi bi-file-earmark-pdf me-1"></i>Download PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Department Payroll Summary Chart ─────────────── -->
+<div class="row g-3 fade-in" style="animation-delay:0.25s;">
+  <div class="col-md-8">
+    <div class="card border-0">
+      <div class="card-header">
+        <i class="bi bi-bar-chart-line me-2" style="color:var(--color-primary);"></i>Department Payroll Distribution
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap-lg"><canvas id="payrollChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 h-100">
+      <div class="card-header">
+        <i class="bi bi-info-circle me-2" style="color:#a78bfa;"></i>Payroll Info
+      </div>
+      <div class="card-body d-flex flex-column gap-3">
+        <div class="glass-card p-3">
+          <div style="font-size:0.7rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.3rem;">Salary Formula</div>
+          <div style="font-size:0.78rem;color:var(--color-text);line-height:1.7;">
+            <div><span style="color:var(--color-success);">+</span> Basic Salary</div>
+            <div><span style="color:var(--color-success);">+</span> HRA = Basic × 40%</div>
+            <div><span style="color:var(--color-success);">+</span> DA = Basic × 12%</div>
+            <div><span style="color:var(--color-success);">+</span> Bonus (variable)</div>
+            <div style="border-top:1px solid var(--color-border);margin:0.4rem 0;"></div>
+            <div><span style="color:var(--color-danger);">−</span> PF = Basic × 12%</div>
+            <div><span style="color:var(--color-danger);">−</span> Professional Tax ₹200</div>
+            <div style="border-top:1px solid var(--color-border);margin:0.4rem 0;"></div>
+            <div style="color:var(--color-primary);font-weight:700;">= Net Salary</div>
+          </div>
+        </div>
+        <div class="glass-card p-3">
+          <div style="font-size:0.7rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.5rem;">Quick Stats</div>
+          <div id="payrollQuickStats" style="font-size:0.8rem;color:var(--color-text-muted);">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/payslip.js') }}"></script>
+<script>
+var currentPayrollData = null;
+
+/* ── Set default pay period to current month ── */
+(function setDefaultPeriod(){
+  var now    = new Date();
+  var yyyy   = now.getFullYear();
+  var mm     = String(now.getMonth() + 1).padStart(2, '0');
+  var el     = document.getElementById('payPeriodInput') || document.getElementById('payPeriod');
+  if (el) el.value = yyyy + '-' + mm;
+})();
+
+/* ── Fetch employee data ── */
+async function fetchEmployeePayroll() {
+  var empId = document.getElementById('payEmpId').value;
+  if (!empId) { showToast('Enter an Employee ID first', 'warning'); return; }
+  try {
+    var r = await fetch('/api/employees/' + empId);
+    if (!r.ok) throw new Error('Not found');
+    var d = await r.json();
+    renderEmpInfo(d);
+    return d;
+  } catch(e) {
+    showToast('Employee ID ' + empId + ' not found', 'danger');
+  }
+}
+
+/* ── Render employee info panel ── */
+function renderEmpInfo(emp) {
+  var panel = document.getElementById('empInfoPanel');
+  var initials = emp.name.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('');
+  panel.innerHTML = `
+    <div class="text-center mb-3">
+      <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--color-primary),var(--color-secondary));display:grid;place-items:center;font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:#0a0f1e;margin:0 auto 0.75rem;">${initials}</div>
+      <div style="font-weight:700;color:var(--color-text);font-family:var(--font-display);">${SmartHR.escapeHtml(emp.name)}</div>
+      <div style="font-size:0.78rem;color:var(--color-text-muted);">${SmartHR.escapeHtml(emp.designation)}</div>
+    </div>
+    <div style="font-size:0.78rem;" class="d-flex flex-column gap-2">
+      <div class="d-flex justify-content-between">
+        <span style="color:var(--color-text-muted);">ID</span>
+        <span style="color:var(--color-text);font-weight:600;">#${emp.id}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span style="color:var(--color-text-muted);">Department</span>
+        <span style="color:var(--color-text);">${SmartHR.escapeHtml(emp.department)}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span style="color:var(--color-text-muted);">Basic Salary</span>
+        <span style="color:var(--color-success);">₹${fmt(emp.basic_salary)}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span style="color:var(--color-text-muted);">Email</span>
+        <span style="color:var(--color-text);font-size:0.72rem;">${SmartHR.escapeHtml(emp.email || '')}</span>
+      </div>
+    </div>`;
+}
+
+/* ── Calculate net salary ── */
+async function calculateNetSalary() {
+  var empData = await fetchEmployeePayroll();
+  if (!empData) return;
+
+  var basic   = empData.basic_salary   || 0;
+  var hra     = empData.hra            || Math.round(basic * 0.40);
+  var da      = empData.da             || Math.round(basic * 0.12);
+  var bonus   = parseInt(document.getElementById('bonusInput').value) || 0;
+  var pf      = empData.pf_deduction   || Math.round(basic * 0.12);
+  var profTax = 200;
+  var gross   = basic + hra + da + bonus;
+  var netSalary = gross - pf - profTax;
+
+  var periodRaw = (document.getElementById('payPeriodInput') || document.getElementById('payPeriod')).value;
+  var periodDate = periodRaw ? new Date(periodRaw + '-01') : new Date();
+  var payPeriod = periodDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+  currentPayrollData = {
+    employeeId:   empData.id,
+    employeeName: empData.name,
+    designation:  empData.designation,
+    department:   empData.department,
+    email:        empData.email,
+    joiningDate:  empData.joining_date || 'N/A',
+    basic:        basic,
+    hra:          hra,
+    da:           da,
+    bonus:        bonus,
+    pf:           pf,
+    professionalTax: profTax,
+    tds:          0,
+    netSalary:    netSalary,
+    payPeriod:    payPeriod,
+    issueDate:    new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+  };
+
+  renderSalaryBreakdown(currentPayrollData);
+  renderPayslipPreview(currentPayrollData);
+}
+
+/* ── Salary breakdown in left panel ── */
+function renderSalaryBreakdown(d) {
+  var panel = document.getElementById('salaryBreakdownPanel');
+  panel.innerHTML = `
+    <div class="salary-row"><span>Basic Salary</span><span style="color:var(--color-success);">₹${fmt(d.basic)}</span></div>
+    <div class="salary-row"><span>HRA (40%)</span><span style="color:var(--color-success);">₹${fmt(d.hra)}</span></div>
+    <div class="salary-row"><span>DA (12%)</span><span style="color:var(--color-success);">₹${fmt(d.da)}</span></div>
+    <div class="salary-row"><span>Bonus</span><span style="color:var(--color-success);">₹${fmt(d.bonus)}</span></div>
+    <div class="salary-row" style="font-weight:600;color:var(--color-text);padding-top:0.5rem;border-top:1px solid var(--color-border);margin-top:0.25rem;">
+      <span>Gross Salary</span><span style="color:var(--color-primary);">₹${fmt(d.basic+d.hra+d.da+d.bonus)}</span>
+    </div>
+    <div style="margin-top:0.75rem;"></div>
+    <div class="salary-row deduction"><span>PF (12% Basic)</span><span>− ₹${fmt(d.pf)}</span></div>
+    <div class="salary-row deduction"><span>Professional Tax</span><span>− ₹${fmt(d.professionalTax)}</span></div>
+    <div class="salary-row total">
+      <span><i class="bi bi-cash-coin me-1"></i>Net Salary</span>
+      <span>₹${fmt(d.netSalary)}</span>
+    </div>`;
+}
+
+/* ── Payslip preview card ── */
+function renderPayslipPreview(d) {
+  var section = document.getElementById('payslipPreviewSection');
+  section.removeAttribute('style');
+
+  document.getElementById('previewPeriod').textContent   = d.payPeriod;
+  document.getElementById('previewEmpName').textContent  = d.employeeName;
+  document.getElementById('previewEmpRole').textContent  = d.designation + '  ·  ' + d.department;
+  document.getElementById('previewEmpId').textContent    = 'Employee ID: #' + d.employeeId + '   ·   Joining Date: ' + d.joiningDate;
+  document.getElementById('previewNetPay').textContent   = '₹ ' + fmt(d.netSalary);
+  document.getElementById('previewFinalNet').textContent = '₹ ' + fmt(d.netSalary);
+
+  document.getElementById('previewEarnings').innerHTML = `
+    <div class="salary-row"><span>Basic Salary</span><span style="color:var(--color-success);">₹${fmt(d.basic)}</span></div>
+    <div class="salary-row"><span>HRA (40%)</span><span style="color:var(--color-success);">₹${fmt(d.hra)}</span></div>
+    <div class="salary-row"><span>DA (12%)</span><span style="color:var(--color-success);">₹${fmt(d.da)}</span></div>
+    <div class="salary-row"><span>Bonus</span><span style="color:var(--color-success);">₹${fmt(d.bonus)}</span></div>`;
+
+  document.getElementById('previewDeductions').innerHTML = `
+    <div class="salary-row deduction"><span>PF (12%)</span><span>− ₹${fmt(d.pf)}</span></div>
+    <div class="salary-row deduction"><span>Professional Tax</span><span>− ₹${fmt(d.professionalTax)}</span></div>`;
+}
+
+/* ── Download PDF ── */
+function downloadPayslipPDF() {
+  if (!currentPayrollData) { showToast('Calculate salary first', 'warning'); return; }
+  PayslipGenerator.generatePayslip(currentPayrollData);
+  showToast('Payslip PDF downloading…', 'success');
+}
+
+function printPayslip() {
+  window.print();
+}
+
+/* ── Run Payroll (bulk simulation) ── */
+async function runPayroll() {
+  showToast('Payroll run initiated for all 200 employees', 'success');
+}
+
+/* ── Export CSV ── */
+async function exportPayrollCSV() {
+  var r = await fetch('/api/reports/employees.csv');
+  var blob = await r.blob();
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'payroll_export.csv';
+  a.click();
+}
+
+/* ── Dept payroll chart ── */
+async function initPayrollChart() {
+  try {
+    var r = await fetch('/api/analytics/salary/departments');
+    var d = await r.json();
+    var ctx = document.getElementById('payrollChart').getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 0, 260);
+    grad.addColorStop(0, 'rgba(0,212,255,0.85)');
+    grad.addColorStop(1, 'rgba(0,212,255,0.2)');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: d.map(function(x){ return x.department; }),
+        datasets: [{
+          label: 'Avg Net Salary (₹)',
+          data: d.map(function(x){ return x.avg_salary; }),
+          backgroundColor: grad,
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: function(c){ return '₹ ' + c.raw.toLocaleString('en-IN'); } } }
+        },
+        scales: {
+          x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } },
+          y: { ticks: { color: '#94a3b8', callback: function(v){ return '₹'+Math.round(v/1000)+'k'; } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+
+    /* Quick stats */
+    var totalPayroll = d.reduce(function(s, x){ return s + x.avg_salary; }, 0);
+    document.getElementById('payrollQuickStats').innerHTML = `
+      <div class="d-flex justify-content-between mb-2"><span>Departments</span><span style="color:var(--color-primary);font-weight:600;">${d.length}</span></div>
+      <div class="d-flex justify-content-between mb-2"><span>Total Employees</span><span style="color:var(--color-primary);font-weight:600;">200</span></div>
+      <div class="d-flex justify-content-between mb-2"><span>Highest Avg</span><span style="color:var(--color-success);font-weight:600;">₹${Math.round(Math.max(...d.map(function(x){return x.avg_salary;}))/1000)}k</span></div>
+      <div class="d-flex justify-content-between"><span>Lowest Avg</span><span style="color:var(--color-warning);font-weight:600;">₹${Math.round(Math.min(...d.map(function(x){return x.avg_salary;}))/1000)}k</span></div>`;
+  } catch(e) {}
+}
+
+/* ── Toast notification ── */
+function showToast(msg, type) {
+  var el = document.createElement('div');
+  el.className = 'alert alert-' + type + ' fade-in';
+  el.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;min-width:280px;box-shadow:var(--shadow-lg);';
+  el.innerHTML = '<i class="bi bi-' + (type==='success'?'check-circle':'exclamation-triangle') + ' me-2"></i>' + msg;
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 3500);
+}
+
+function fmt(v) { return Math.round(v || 0).toLocaleString('en-IN'); }
+
+document.addEventListener('DOMContentLoaded', initPayrollChart);
+</script>
+{% endblock %}

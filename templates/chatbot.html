@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% block title %}HR Chatbot{% endblock %}
+{% block nav_title %}HR AI Chatbot{% endblock %}
+
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 fade-in">
+  <div>
+    <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;margin:0;">
+      <i class="bi bi-robot me-2" style="color:var(--color-primary);"></i>HR AI Chatbot
+    </h2>
+    <p style="font-size:0.82rem;color:var(--color-text-muted);margin:0.2rem 0 0;">
+      NLP-powered assistant — TF-IDF + Logistic Regression intent classifier.
+    </p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <span class="status-dot online"></span>
+    <span style="font-size:0.78rem;color:var(--color-text-muted);">AI Engine Online</span>
+  </div>
+</div>
+
+<div class="row g-3">
+
+  <!-- ── Chat Window ── -->
+  <div class="col-lg-8 fade-in">
+    <div class="chat-panel" style="display:flex;flex-direction:column;height:600px;">
+
+      <!-- Chat header -->
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">
+        <div class="bot-avatar" style="width:36px;height:36px;">
+          <i class="bi bi-robot" style="font-size:0.9rem;"></i>
+        </div>
+        <div>
+          <div style="font-weight:700;font-family:var(--font-display);font-size:0.9rem;color:var(--color-text);">SmartHR Assistant</div>
+          <div style="font-size:0.68rem;color:var(--color-text-muted);">NLU Intent Engine · 8 trained intents</div>
+        </div>
+        <div class="ms-auto">
+          <button class="btn btn-ghost btn-sm" onclick="clearChat()" title="Clear chat">
+            <i class="bi bi-trash3"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages flex-grow-1" id="chatMessages">
+        <div class="chat-msg mb-3 fade-in-up">
+          <div class="d-flex align-items-start gap-2">
+            <div class="bot-avatar"><i class="bi bi-robot"></i></div>
+            <div class="bubble bot-bubble">
+              <div style="font-weight:600;margin-bottom:0.35rem;color:var(--color-primary);">Hello! I'm SmartHR Assistant 👋</div>
+              I can help you with:
+              <ul style="margin:0.5rem 0 0;padding-left:1.2rem;font-size:0.83rem;line-height:1.8;">
+                <li>Leave balances &amp; applications</li>
+                <li>Salary information</li>
+                <li>Employee directory search</li>
+                <li>Performance feedback</li>
+                <li>General HR queries</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input footer -->
+      <div style="padding:1rem;border-top:1px solid var(--color-border);background:var(--color-surface);flex-shrink:0;">
+        <div class="mb-2">
+          <input type="number" id="empIdInput" class="form-control form-control-sm"
+                 placeholder="Employee ID (optional — for personalised answers)" min="1"
+                 style="font-size:0.78rem;">
+        </div>
+        <div class="d-flex gap-2 mb-2">
+          <input type="text" id="msgInput" class="form-control"
+                 placeholder="Ask me anything… e.g. 'How many days off do I have?'"
+                 autocomplete="off">
+          <button class="btn btn-primary px-3" onclick="sendChatMessage()" id="sendBtn" style="flex-shrink:0;">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+        <!-- Quick reply chips -->
+        <div class="d-flex flex-wrap gap-2" id="quickReplies">
+          <button class="quick-chip" onclick="fillAndSend('How many days of leave do I have?')">Leave balance</button>
+          <button class="quick-chip" onclick="fillAndSend('What is my salary?')">My salary</button>
+          <button class="quick-chip" onclick="fillAndSend('How many employees are there?')">Employee count</button>
+          <button class="quick-chip" onclick="fillAndSend('Show my performance feedback')">My feedback</button>
+          <button class="quick-chip" onclick="fillAndSend('I want to apply for leave')">Apply leave</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Info Panels ── -->
+  <div class="col-lg-4 d-flex flex-column gap-3 fade-in" style="animation-delay:0.1s;">
+
+    <!-- NLP Pipeline -->
+    <div class="card border-0">
+      <div class="card-header">
+        <i class="bi bi-cpu me-2" style="color:var(--color-primary);"></i>NLP Pipeline
+      </div>
+      <div class="card-body p-3">
+        <div class="d-flex flex-column gap-2" style="font-size:0.8rem;">
+          {% for step, desc in [
+            ('1', 'Preprocess &amp; tokenize input'),
+            ('2', 'TF-IDF vectorize (n-gram features)'),
+            ('3', 'Logistic Regression classify'),
+            ('4', 'Confidence threshold (≥ 30%)'),
+            ('5', 'Intent → DB query → response')
+          ] %}
+          <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background:var(--color-surface-2);">
+            <span style="width:20px;height:20px;border-radius:50%;background:var(--color-primary-dim);color:var(--color-primary);display:grid;place-items:center;font-size:0.65rem;font-weight:700;flex-shrink:0;">{{ step }}</span>
+            <span style="color:var(--color-text-muted);">{{ desc|safe }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Last Intent -->
+    <div class="card border-0">
+      <div class="card-header">
+        <i class="bi bi-lightning-charge me-2" style="color:var(--color-warning);"></i>Last Detected Intent
+      </div>
+      <div class="card-body p-3" id="intentPanel">
+        <div class="empty-state py-2">
+          <i class="bi bi-chat-dots"></i>
+          <p>Send a message to see the predicted intent</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supported intents -->
+    <div class="card border-0">
+      <div class="card-header">
+        <i class="bi bi-tags me-2" style="color:#a78bfa;"></i>Supported Intents
+      </div>
+      <div class="card-body p-3">
+        <div class="d-flex flex-wrap gap-1">
+          {% for intent in ['check_leave_balance','apply_leave','salary_info','employee_list','performance_feedback','emotional_support','greeting','farewell'] %}
+          <span class="badge badge-muted" style="font-size:0.65rem;">{{ intent }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+var chatMessages = document.getElementById('chatMessages');
+var msgInput     = document.getElementById('msgInput');
+
+msgInput.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') sendChatMessage();
+});
+
+function fillAndSend(text) {
+  msgInput.value = text;
+  sendChatMessage();
+}
+
+function clearChat() {
+  chatMessages.innerHTML = '';
+  appendBotBubble('Chat cleared. How can I help you?', null, null);
+}
+
+/* ── Send message ── */
+async function sendChatMessage() {
+  var message = msgInput.value.trim();
+  var empId   = document.getElementById('empIdInput').value;
+  if (!message) return;
+
+  appendUserBubble(message);
+  msgInput.value = '';
+  document.getElementById('sendBtn').disabled = true;
+
+  var typingId = appendTypingIndicator();
+
+  try {
+    var r = await fetch('/api/chatbot/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: message, employee_id: empId ? parseInt(empId) : null })
+    });
+    var d = await r.json();
+    document.getElementById(typingId)?.remove();
+    appendBotBubble(d.response, d.intent, d.confidence);
+    updateIntentPanel(d.intent, d.confidence);
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    appendBotBubble("Sorry, I couldn't reach the server. Please try again.", null, null);
+  } finally {
+    document.getElementById('sendBtn').disabled = false;
+    msgInput.focus();
+  }
+}
+
+/* ── Render bubbles ── */
+function appendUserBubble(text) {
+  var div = document.createElement('div');
+  div.className = 'chat-msg mb-3 fade-in-up';
+  div.innerHTML =
+    '<div class="d-flex justify-content-end">' +
+      '<div class="bubble user-bubble">' + SmartHR.escapeHtml(text) + '</div>' +
+    '</div>';
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function appendBotBubble(text, intent, confidence) {
+  var div = document.createElement('div');
+  div.className = 'chat-msg mb-3 fade-in-up';
+
+  var intentTag = '';
+  if (intent) {
+    var pct = confidence ? Math.round(confidence * 100) : null;
+    intentTag = '<div class="mt-2 text-end">' +
+      '<span class="badge badge-muted" style="font-size:0.62rem;">' +
+        SmartHR.escapeHtml(intent) +
+        (pct !== null ? ' · ' + pct + '%' : '') +
+      '</span></div>';
+  }
+
+  div.innerHTML =
+    '<div class="d-flex align-items-start gap-2">' +
+      '<div class="bot-avatar"><i class="bi bi-robot"></i></div>' +
+      '<div class="bubble bot-bubble">' + text + intentTag + '</div>' +
+    '</div>';
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function appendTypingIndicator() {
+  var id  = 'typing-' + Date.now();
+  var div = document.createElement('div');
+  div.id  = id;
+  div.className = 'chat-msg mb-3';
+  div.innerHTML =
+    '<div class="d-flex align-items-start gap-2">' +
+      '<div class="bot-avatar"><i class="bi bi-robot"></i></div>' +
+      '<div class="bubble bot-bubble">' +
+        '<span class="typing-dots d-flex gap-1 align-items-center" style="min-width:36px;padding:2px 0;">' +
+          '<span></span><span></span><span></span>' +
+        '</span>' +
+      '</div>' +
+    '</div>';
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return id;
+}
+
+/* ── Intent panel ── */
+function updateIntentPanel(intent, confidence) {
+  var panel = document.getElementById('intentPanel');
+  if (!intent) return;
+  var pct   = confidence ? Math.round(confidence * 100) : null;
+  var color = pct >= 75 ? 'var(--color-success)' : pct >= 50 ? 'var(--color-warning)' : 'var(--color-danger)';
+
+  panel.innerHTML =
+    '<div style="font-weight:700;font-family:var(--font-display);font-size:0.9rem;color:var(--color-text);margin-bottom:0.5rem;">' +
+      SmartHR.escapeHtml(intent) +
+    '</div>' +
+    (pct !== null ?
+      '<div class="d-flex align-items-center gap-2 mb-2">' +
+        '<div class="progress flex-grow-1"><div class="progress-bar" style="width:' + pct + '%;background:' + color + ';box-shadow:none;"></div></div>' +
+        '<span style="font-size:0.75rem;font-weight:700;color:' + color + ';">' + pct + '%</span>' +
+      '</div>' : '') +
+    '<div style="font-size:0.7rem;color:var(--color-text-muted);">Logistic Regression · TF-IDF features</div>';
+}
+</script>
+{% endblock %}

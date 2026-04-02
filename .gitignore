@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Database (SQLite — use seed.py to regenerate)
+*.db
+*.sqlite3
+
+# Uploads (user-uploaded resumes)
+uploads/
+
+# Environment / secrets
+.env
+.env.*
+config_local.py
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/

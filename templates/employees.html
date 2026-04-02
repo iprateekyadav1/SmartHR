@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+{% block nav_title %}Employee Directory{% endblock %}
+
+{% block content %}
+
+<!-- ── Toolbar ──────────────────────────────────────── -->
+<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4 fade-in">
+  <div>
+    <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;margin:0;">
+      <i class="bi bi-people-fill me-2" style="color:var(--color-primary);"></i>Employee Directory
+    </h2>
+    <p style="font-size:0.82rem;color:var(--color-text-muted);margin:0.2rem 0 0;">Manage workforce, parse resumes, and control access.</p>
+  </div>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+    <i class="bi bi-person-plus me-1"></i>Add Employee
+  </button>
+</div>
+
+<!-- ── Filters ── -->
+<div class="d-flex flex-wrap gap-2 mb-3 fade-in" style="animation-delay:0.05s;">
+  <div class="position-relative">
+    <i class="bi bi-search position-absolute" style="left:0.75rem;top:50%;transform:translateY(-50%);color:var(--color-text-muted);font-size:0.8rem;pointer-events:none;"></i>
+    <input type="text" id="searchInput" class="form-control ps-4"
+           placeholder="Search name or email…" style="width:230px;">
+  </div>
+  <select id="deptFilter" class="form-select" style="width:180px;">
+    <option value="">All Departments</option>
+    <option>Engineering</option><option>HR</option>
+    <option>Finance</option><option>Marketing</option>
+    <option>Operations</option><option>Sales</option>
+    <option>Legal</option><option>Design</option>
+  </select>
+  <span id="empCount" class="d-flex align-items-center px-3 rounded-3"
+        style="background:var(--color-primary-dim);color:var(--color-primary);font-size:0.78rem;font-weight:600;border:1px solid rgba(0,212,255,0.2);"></span>
+</div>
+
+<!-- ── Employee Table ─────────────────────────────── -->
+<div class="card border-0 fade-in" style="animation-delay:0.08s;">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0" id="empTable">
+        <thead>
+          <tr>
+            <th class="ps-4" style="width:280px;">Employee</th>
+            <th>Department</th>
+            <th>Designation</th>
+            <th>Net Salary</th>
+            <th>Skills</th>
+            <th class="pe-4" style="width:120px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="empBody">
+          <tr><td colspan="6" class="py-4 px-3">
+            <div class="skeleton skeleton-row mb-2"></div>
+            <div class="skeleton skeleton-row mb-2"></div>
+            <div class="skeleton skeleton-row mb-2"></div>
+            <div class="skeleton skeleton-row"></div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Employee Modal ────────────────────────── -->
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-person-plus me-2" style="color:var(--color-primary);"></i>Add New Employee
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Resume Parser banner -->
+        <div class="p-3 rounded-3 mb-3 d-flex align-items-start gap-3"
+             style="background:var(--color-primary-dim);border:1px solid rgba(0,212,255,0.2);">
+          <i class="bi bi-file-earmark-person fs-4 flex-shrink-0" style="color:var(--color-primary);"></i>
+          <div>
+            <div style="font-weight:700;color:var(--color-primary);font-size:0.875rem;font-family:var(--font-display);">
+              AI Resume Parser
+            </div>
+            <div style="font-size:0.78rem;color:var(--color-text-muted);">
+              Upload a PDF/DOCX — spaCy NER extracts name, email, phone, skills and experience automatically.
+            </div>
+          </div>
+        </div>
+        <div class="mb-2">
+          <input type="file" id="resumeFile" class="form-control" accept=".pdf,.docx,.txt" onchange="parseResume()">
+        </div>
+        <div id="parseStatus" class="mb-3" style="min-height:20px;"></div>
+
+        <div style="height:1px;background:var(--color-border);margin-bottom:1.25rem;"></div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="f-name" class="form-control" required placeholder="Arjun Sharma">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email *</label>
+            <input type="email" id="f-email" class="form-control" required placeholder="arjun@company.com">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <input type="text" id="f-phone" class="form-control" placeholder="+91 98765 43210">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Department *</label>
+            <select id="f-dept" class="form-select">
+              <option>Engineering</option><option>HR</option>
+              <option>Finance</option><option>Marketing</option>
+              <option>Operations</option><option>Sales</option>
+              <option>Legal</option><option>Design</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Designation *</label>
+            <input type="text" id="f-desig" class="form-control" placeholder="Software Engineer">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Basic Salary (₹/month)</label>
+            <input type="number" id="f-salary" class="form-control" value="50000" min="0">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Join Date</label>
+            <input type="date" id="f-join" class="form-control">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Skills (comma-separated)</label>
+            <input type="text" id="f-skills" class="form-control" placeholder="Python, React, SQL, Machine Learning">
+          </div>
+        </div>
+        <div id="formError" style="color:var(--color-danger);font-size:0.8rem;margin-top:0.5rem;min-height:18px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="submitEmployee()">
+          <i class="bi bi-check2 me-1"></i>Save Employee
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .dept-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+</style>
+<script>
+var DEPT_COLORS = {
+  'Engineering': ['rgba(0,212,255,0.12)','#00d4ff'],
+  'HR':          ['rgba(16,185,129,0.12)','#10b981'],
+  'Finance':     ['rgba(124,58,237,0.12)','#a78bfa'],
+  'Marketing':   ['rgba(236,72,153,0.12)','#f472b6'],
+  'Operations':  ['rgba(245,158,11,0.12)','#fbbf24'],
+  'Sales':       ['rgba(239,68,68,0.12)', '#f87171'],
+  'Legal':       ['rgba(6,182,212,0.12)', '#22d3ee'],
+  'Design':      ['rgba(249,115,22,0.12)','#fb923c']
+};
+
+document.addEventListener('DOMContentLoaded', loadEmployees);
+
+var searchTimer;
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadEmployees, 350);
+});
+document.getElementById('deptFilter').addEventListener('change', loadEmployees);
+
+async function loadEmployees() {
+  var search = document.getElementById('searchInput').value;
+  var dept   = document.getElementById('deptFilter').value;
+  var url    = '/api/employees?active=true';
+  if (search) url += '&search=' + encodeURIComponent(search);
+  if (dept)   url += '&department=' + encodeURIComponent(dept);
+
+  try {
+    var r    = await fetch(url);
+    var data = await r.json();
+    renderEmployeeTable(data);
+  } catch(e) {}
+}
+
+function renderEmployeeTable(data) {
+  var tbody  = document.getElementById('empBody');
+  var countEl = document.getElementById('empCount');
+  countEl.textContent = data.length + ' employees';
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>No employees found.</p></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(function(e) {
+    var skills   = (e.skills || []).slice(0, 3);
+    var dColors  = DEPT_COLORS[e.department] || ['rgba(148,163,184,0.12)','#94a3b8'];
+    var initials = e.name.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('');
+    var net      = Math.round((e.salary || 0) * 0.88); // approx net after deductions
+
+    return '<tr class="fade-in">' +
+      '<td class="ps-4">' +
+        '<div class="d-flex align-items-center gap-2">' +
+          '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--color-primary),var(--color-secondary));display:grid;place-items:center;font-family:var(--font-display);font-size:0.8rem;font-weight:700;color:#0a0f1e;flex-shrink:0;">' +
+            SmartHR.escapeHtml(initials) +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:0.875rem;font-weight:600;color:var(--color-text);">' + SmartHR.escapeHtml(e.name) + '</div>' +
+            '<div style="font-size:0.7rem;color:var(--color-text-muted);">' + SmartHR.escapeHtml(e.email) + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</td>' +
+      '<td>' +
+        '<span class="dept-badge" style="background:' + dColors[0] + ';color:' + dColors[1] + ';">' +
+          SmartHR.escapeHtml(e.department) +
+        '</span>' +
+      '</td>' +
+      '<td style="font-size:0.84rem;color:var(--color-text);">' + SmartHR.escapeHtml(e.designation) + '</td>' +
+      '<td style="font-size:0.875rem;font-weight:600;color:var(--color-success);">₹' + net.toLocaleString('en-IN') + '</td>' +
+      '<td>' +
+        skills.map(function(s){ return '<span class="skill-tag">' + SmartHR.escapeHtml(s) + '</span>'; }).join('') +
+        (e.skills.length > 3 ? '<span style="font-size:0.68rem;color:var(--color-text-muted);margin-left:2px;">+' + (e.skills.length - 3) + '</span>' : '') +
+      '</td>' +
+      '<td class="pe-4">' +
+        '<div class="d-flex gap-1">' +
+          '<a href="/payroll" class="btn btn-sm" style="background:var(--color-primary-dim);color:var(--color-primary);border:1px solid rgba(0,212,255,0.2);" title="View Payslip">' +
+            '<i class="bi bi-receipt"></i>' +
+          '</a>' +
+          '<button class="btn btn-outline-danger btn-sm" title="Deactivate" onclick="deactivateEmployee(' + e.id + ', \'' + SmartHR.escapeHtml(e.name) + '\')">' +
+            '<i class="bi bi-person-dash"></i>' +
+          '</button>' +
+        '</div>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+/* ── Resume parser ── */
+async function parseResume() {
+  var fileInput = document.getElementById('resumeFile');
+  var status    = document.getElementById('parseStatus');
+  if (!fileInput.files[0]) { status.innerHTML = ''; return; }
+
+  var stages = ['Reading file…', 'Extracting entities (NER)…', 'Mapping candidate fields…'];
+  var i = 0;
+  status.innerHTML = '<span style="color:var(--color-primary);font-size:0.82rem;"><i class="bi bi-arrow-repeat spin me-1"></i>' + stages[0] + '</span>';
+  var stageTimer = setInterval(function() {
+    i = Math.min(i + 1, stages.length - 1);
+    status.innerHTML = '<span style="color:var(--color-primary);font-size:0.82rem;"><i class="bi bi-arrow-repeat spin me-1"></i>' + stages[i] + '</span>';
+  }, 700);
+
+  var form = new FormData();
+  form.append('file', fileInput.files[0]);
+
+  try {
+    var r = await fetch('/api/employees/parse-resume', { method: 'POST', body: form });
+    var d = await r.json();
+    clearInterval(stageTimer);
+
+    if (d.error) {
+      status.innerHTML = '<span style="color:var(--color-danger);font-size:0.82rem;"><i class="bi bi-exclamation-circle me-1"></i>' + SmartHR.escapeHtml(d.error) + '</span>';
+      return;
+    }
+
+    document.getElementById('f-name').value   = d.name   || '';
+    document.getElementById('f-email').value  = d.email  || '';
+    document.getElementById('f-phone').value  = d.phone  || '';
+    document.getElementById('f-skills').value = d.skills_str || '';
+
+    status.innerHTML = '<div class="p-2 rounded-3" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);font-size:0.8rem;">' +
+      '<span style="color:var(--color-success);"><i class="bi bi-check-circle-fill me-1"></i><strong>Parse complete</strong></span>' +
+      '&nbsp;·&nbsp; ' + SmartHR.escapeHtml(d.name || '—') +
+      '&nbsp;·&nbsp; ' + (d.skills ? d.skills.length : 0) + ' skills detected' +
+      '&nbsp;·&nbsp; ' + (d.experience_years || 0) + ' yrs exp' +
+    '</div>';
+  } catch(e) {
+    clearInterval(stageTimer);
+    status.innerHTML = '<span style="color:var(--color-danger);font-size:0.82rem;">Parse failed — try a different file.</span>';
+  }
+}
+
+/* ── Submit new employee ── */
+async function submitEmployee() {
+  var errEl = document.getElementById('formError');
+  errEl.textContent = '';
+
+  var payload = {
+    name:        document.getElementById('f-name').value.trim(),
+    email:       document.getElementById('f-email').value.trim(),
+    phone:       document.getElementById('f-phone').value.trim(),
+    department:  document.getElementById('f-dept').value,
+    designation: document.getElementById('f-desig').value.trim(),
+    salary:      document.getElementById('f-salary').value,
+    join_date:   document.getElementById('f-join').value,
+    skills:      document.getElementById('f-skills').value.trim()
+  };
+
+  if (!payload.name || !payload.email || !payload.designation) {
+    errEl.textContent = 'Name, Email and Designation are required.';
+    return;
+  }
+
+  var r = await fetch('/api/employees', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  var d = await r.json();
+  if (!r.ok) { errEl.textContent = d.error || 'Failed to save.'; return; }
+
+  bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+  loadEmployees();
+}
+
+/* ── Deactivate employee ── */
+async function deactivateEmployee(id, name) {
+  if (!confirm('Deactivate ' + name + '? Their records will be preserved.')) return;
+  await fetch('/api/employees/' + id, { method: 'DELETE' });
+  loadEmployees();
+}
+</script>
+{% endblock %}

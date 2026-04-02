@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block nav_title %}Reports & Export{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4 fade-in">
+  <div>
+    <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;margin:0;">
+      <i class="bi bi-file-earmark-bar-graph me-2" style="color:var(--color-primary);"></i>Reports &amp; Export Center
+    </h2>
+    <p style="font-size:0.82rem;color:var(--color-text-muted);margin:0.2rem 0 0;">
+      Export live datasets as CSV or PDF for presentations and evaluation.
+    </p>
+  </div>
+  <span class="badge badge-primary" style="padding:0.4em 0.8em;font-size:0.72rem;">
+    <i class="bi bi-shield-lock me-1"></i>Admin Only
+  </span>
+</div>
+
+<!-- ── Summary KPIs ──────────────────────────────── -->
+<div class="row g-3 mb-4 fade-in" style="animation-delay:0.05s;">
+  <div class="col-md-3 col-6">
+    <div class="stat-card" data-tilt>
+      <div class="stat-card-inner">
+        <div class="stat-icon" style="background:rgba(0,212,255,0.12);color:var(--color-primary);">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <div>
+          <div class="stat-label">Employees</div>
+          <div class="stat-value" id="repEmployees"><span class="skeleton skeleton-stat"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="stat-card" data-tilt>
+      <div class="stat-card-inner">
+        <div class="stat-icon" style="background:rgba(245,158,11,0.12);color:var(--color-warning);">
+          <i class="bi bi-calendar-check"></i>
+        </div>
+        <div>
+          <div class="stat-label">Leave Records</div>
+          <div class="stat-value" id="repLeaves"><span class="skeleton skeleton-stat"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="stat-card" data-tilt>
+      <div class="stat-card-inner">
+        <div class="stat-icon" style="background:rgba(124,58,237,0.12);color:#a78bfa;">
+          <i class="bi bi-chat-square-text"></i>
+        </div>
+        <div>
+          <div class="stat-label">Feedbacks</div>
+          <div class="stat-value" id="repFeedbacks"><span class="skeleton skeleton-stat"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="stat-card" data-tilt>
+      <div class="stat-card-inner">
+        <div class="stat-icon" style="background:rgba(16,185,129,0.12);color:var(--color-success);">
+          <i class="bi bi-database"></i>
+        </div>
+        <div>
+          <div class="stat-label">DB Records</div>
+          <div class="stat-value" id="repTotal"><span class="skeleton skeleton-stat"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Export Cards ──────────────────────────────── -->
+<div class="row g-3 mb-4 fade-in" style="animation-delay:0.1s;">
+
+  <div class="col-md-4">
+    <div class="report-card" onclick="downloadReport('employees')">
+      <div class="report-icon">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <h5 style="font-family:var(--font-display);font-weight:700;color:var(--color-text);margin-bottom:0.4rem;">Employee Directory</h5>
+      <p style="font-size:0.8rem;color:var(--color-text-muted);margin-bottom:1rem;">All active employees with department, designation, salary and skills.</p>
+      <div class="d-flex align-items-center justify-content-between">
+        <span style="font-size:0.72rem;color:var(--color-text-muted);">CSV · Live Data</span>
+        <span class="badge badge-primary"><i class="bi bi-download me-1"></i>Export</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="report-card" onclick="downloadReport('leaves')">
+      <div class="report-icon" style="background:rgba(245,158,11,0.12);color:var(--color-warning);">
+        <i class="bi bi-calendar-check"></i>
+      </div>
+      <h5 style="font-family:var(--font-display);font-weight:700;color:var(--color-text);margin-bottom:0.4rem;">Leave Applications</h5>
+      <p style="font-size:0.8rem;color:var(--color-text-muted);margin-bottom:1rem;">All leave requests with status, type, dates and employee details.</p>
+      <div class="d-flex align-items-center justify-content-between">
+        <span style="font-size:0.72rem;color:var(--color-text-muted);">CSV · Live Data</span>
+        <span class="badge badge-warning"><i class="bi bi-download me-1"></i>Export</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="report-card" onclick="downloadReport('feedback')">
+      <div class="report-icon" style="background:rgba(124,58,237,0.12);color:#a78bfa;">
+        <i class="bi bi-chat-square-heart"></i>
+      </div>
+      <h5 style="font-family:var(--font-display);font-weight:700;color:var(--color-text);margin-bottom:0.4rem;">Feedback &amp; Sentiment</h5>
+      <p style="font-size:0.8rem;color:var(--color-text-muted);margin-bottom:1rem;">All employee feedback with VADER sentiment scores and labels.</p>
+      <div class="d-flex align-items-center justify-content-between">
+        <span style="font-size:0.72rem;color:var(--color-text-muted);">CSV · NLP Scored</span>
+        <span class="badge badge-muted" style="background:rgba(124,58,237,0.12);color:#a78bfa;"><i class="bi bi-download me-1"></i>Export</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Analytics Charts ───────────────────────────── -->
+<div class="row g-3 fade-in" style="animation-delay:0.15s;">
+  <div class="col-md-6">
+    <div class="card border-0">
+      <div class="card-header">
+        <i class="bi bi-bar-chart me-2" style="color:var(--color-primary);"></i>Department Headcount
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap"><canvas id="repDeptChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0">
+      <div class="card-header">
+        <i class="bi bi-pie-chart me-2" style="color:var(--color-warning);"></i>Leave Status Breakdown
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap"><canvas id="repLeaveChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  fetchReportSummary();
+  renderReportCharts();
+  initTiltCards();
+});
+
+async function fetchReportSummary() {
+  try {
+    var r = await fetch('/api/reports/summary');
+    var d = await r.json();
+    animateVal(document.getElementById('repEmployees'), d.employees);
+    animateVal(document.getElementById('repLeaves'),    d.leaves);
+    animateVal(document.getElementById('repFeedbacks'), d.feedbacks);
+    animateVal(document.getElementById('repTotal'),     d.employees + d.leaves + d.feedbacks);
+  } catch(e) {}
+}
+
+function animateVal(el, target) {
+  el.innerHTML = '';
+  var start = 0;
+  var step = Math.max(1, target / 30);
+  var iv = setInterval(function () {
+    start = Math.min(start + step, target);
+    el.textContent = Math.round(start);
+    if (start >= target) clearInterval(iv);
+  }, 22);
+}
+
+async function downloadReport(type) {
+  var urls = {
+    employees: '/api/reports/employees.csv',
+    leaves:    '/api/reports/leaves.csv',
+    feedback:  '/api/reports/feedback.csv'
+  };
+  var url = urls[type];
+  if (!url) return;
+
+  var btn = event.currentTarget;
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+
+  try {
+    var r    = await fetch(url);
+    var blob = await r.blob();
+    var a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = type + '_report_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch(e) {}
+
+  setTimeout(function() { btn.style.opacity = ''; btn.style.pointerEvents = ''; }, 1500);
+}
+
+async function renderReportCharts() {
+  try {
+    var r1 = await fetch('/api/analytics/departments');
+    var d1 = await r1.json();
+    var PALETTE = ['#00d4ff','#7c3aed','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899','#8b5cf6'];
+    new Chart(document.getElementById('repDeptChart'), {
+      type: 'bar',
+      data: {
+        labels: d1.labels,
+        datasets: [{ label: 'Employees', data: d1.data,
+          backgroundColor: PALETTE.map(function(c){ return c; }),
+          borderRadius: 5, borderSkipped: false }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+  } catch(e) {}
+
+  try {
+    var r2 = await fetch('/api/analytics/leaves/status');
+    var d2 = await r2.json();
+    new Chart(document.getElementById('repLeaveChart'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(d2),
+        datasets: [{ data: Object.values(d2),
+          backgroundColor: ['rgba(245,158,11,0.85)','rgba(16,185,129,0.85)','rgba(239,68,68,0.85)'],
+          borderWidth: 3, borderColor: 'var(--color-surface)', hoverOffset: 8 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '68%',
+        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, padding: 10 } } }
+      }
+    });
+  } catch(e) {}
+}
+
+function initTiltCards() {
+  document.querySelectorAll('[data-tilt]').forEach(function(card) {
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      var dx = (e.clientX - rect.left - rect.width/2)  / (rect.width/2);
+      var dy = (e.clientY - rect.top  - rect.height/2) / (rect.height/2);
+      card.style.transform = 'perspective(1000px) rotateY('+(dx*8)+'deg) rotateX('+(-dy*8)+'deg) translateZ(4px)';
+    });
+    card.addEventListener('mouseleave', function() { card.style.transform = ''; });
+  });
+}
+</script>
+{% endblock %}

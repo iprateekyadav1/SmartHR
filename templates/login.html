@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartHR — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary:    #00d4ff;
+      --secondary:  #7c3aed;
+      --bg:         #0a0f1e;
+      --surface:    #111827;
+      --text:       #e2e8f0;
+      --muted:      #94a3b8;
+      --border:     rgba(255,255,255,0.08);
+      --radius:     16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Three.js canvas */
+    #loginCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .login-shell {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    /* Glassmorphism card */
+    .login-card {
+      width: min(900px, 100%);
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 80px rgba(0,212,255,0.05);
+      display: flex;
+    }
+
+    /* Left panel */
+    .hero-panel {
+      flex: 1;
+      background: linear-gradient(160deg, rgba(0,212,255,0.06) 0%, rgba(124,58,237,0.08) 100%);
+      border-right: 1px solid rgba(255,255,255,0.06);
+      padding: 3rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .hero-panel::before {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,212,255,0.08), transparent 70%);
+      top: -80px;
+      right: -80px;
+      pointer-events: none;
+    }
+
+    .hero-panel::after {
+      content: '';
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.1), transparent 70%);
+      bottom: -60px;
+      left: -40px;
+      pointer-events: none;
+    }
+
+    .hero-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 24px rgba(0,212,255,0.4);
+      flex-shrink: 0;
+    }
+
+    .logo-text h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .logo-text small {
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .hero-headline {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.4rem, 3vw, 1.9rem);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.04em;
+      line-height: 1.15;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-headline span {
+      background: linear-gradient(90deg, var(--primary), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .feature-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .feature-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+
+    .feature-chip i { color: var(--primary); }
+
+    .demo-box {
+      background: rgba(0,212,255,0.05);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      font-size: 0.8rem;
+    }
+
+    .demo-box .demo-title {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+
+    .demo-credential {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--muted);
+    }
+
+    .demo-credential:last-child { border-bottom: none; }
+    .demo-credential strong { color: var(--text); }
+
+    /* Right form panel */
+    .form-panel {
+      flex: 1;
+      padding: 3rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .form-panel h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.04em;
+      margin-bottom: 0.35rem;
+    }
+
+    .form-panel p {
+      font-size: 0.825rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+
+    .form-group { margin-bottom: 1.1rem; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 0.4rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      outline: none;
+      transition: all 0.18s;
+    }
+
+    .form-group input::placeholder { color: rgba(148,163,184,0.5); }
+
+    .form-group input:focus {
+      border-color: rgba(0,212,255,0.4);
+      background: rgba(0,212,255,0.04);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+    }
+
+    .forgot-link {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      display: block;
+      text-align: right;
+      margin-top: -0.5rem;
+      margin-bottom: 1.25rem;
+      transition: color 0.18s;
+    }
+
+    .forgot-link:hover { color: var(--primary); }
+
+    .btn-signin {
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, var(--primary), #00a8cc);
+      border: none;
+      border-radius: 12px;
+      color: #0a0f1e;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s;
+      box-shadow: 0 4px 16px rgba(0,212,255,0.35);
+      margin-bottom: 1rem;
+    }
+
+    .btn-signin:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0,212,255,0.45);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.07);
+    }
+
+    .quick-btns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .btn-quick {
+      padding: 0.6rem 0.5rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: all 0.18s;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+    }
+
+    .btn-quick:hover {
+      color: var(--primary);
+      background: rgba(0,212,255,0.07);
+      border-color: rgba(0,212,255,0.2);
+    }
+
+    .error-msg {
+      background: rgba(239,68,68,0.12);
+      border-left: 3px solid #ef4444;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.825rem;
+      color: #f87171;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      .login-card { flex-direction: column; }
+      .hero-panel { padding: 2rem 1.5rem; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+      .hero-panel::before, .hero-panel::after { display: none; }
+      .form-panel { padding: 2rem 1.5rem; }
+      .quick-btns { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Three.js particle canvas -->
+<canvas id="loginCanvas"></canvas>
+
+<div class="login-shell">
+  <div class="login-card">
+
+    <!-- ── Left Panel ── -->
+    <div class="hero-panel">
+      <div>
+        <!-- Logo -->
+        <div class="hero-logo">
+          <div class="logo-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="9" cy="7" r="3.5" stroke="#0a0f1e" stroke-width="1.8" fill="none"/>
+              <path d="M2 20c0-4 3.1-7 7-7" stroke="#0a0f1e" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M16 12l1.5 3h3L18 17.5l1 3L16 19l-3 1.5 1-3L11.5 15h3L16 12z" fill="#0a0f1e"/>
+            </svg>
+          </div>
+          <div class="logo-text">
+            <h3>SmartHR</h3>
+            <small>AI-Powered HR Platform</small>
+          </div>
+        </div>
+
+        <!-- Headline -->
+        <div class="hero-headline">
+          HR Intelligence,<br><span>Reimagined.</span>
+        </div>
+        <p class="hero-sub">
+          One platform for employee management, NLP-powered chatbot, resume parsing, sentiment analysis, and live workforce analytics.
+        </p>
+
+        <!-- Feature chips -->
+        <div class="feature-chips">
+          <span class="feature-chip"><i class="bi bi-robot"></i> NLP Chatbot</span>
+          <span class="feature-chip"><i class="bi bi-file-earmark-person"></i> Resume Parser</span>
+          <span class="feature-chip"><i class="bi bi-graph-up"></i> Live Analytics</span>
+          <span class="feature-chip"><i class="bi bi-emoji-smile"></i> Sentiment AI</span>
+          <span class="feature-chip"><i class="bi bi-wallet2"></i> Payroll Engine</span>
+          <span class="feature-chip"><i class="bi bi-shield-lock"></i> Role-Based Access</span>
+        </div>
+      </div>
+
+      <!-- Demo credentials -->
+      <div class="demo-box">
+        <div class="demo-title">Demo Credentials</div>
+        <div class="demo-credential">
+          <span><i class="bi bi-shield-lock me-1"></i> Admin</span>
+          <span><strong>admin</strong> / Admin@123</span>
+        </div>
+        <div class="demo-credential">
+          <span><i class="bi bi-person me-1"></i> Employee</span>
+          <span><strong>employee</strong> / Employee@123</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right Form Panel ── -->
+    <div class="form-panel">
+      <h2>Welcome back</h2>
+      <p>Sign in to your SmartHR account to continue.</p>
+
+      {% if error %}
+      <div class="error-msg"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="/login">
+        <div class="form-group">
+          <label for="identifier">Username or Email</label>
+          <input type="text" id="identifier" name="identifier"
+                 placeholder="admin or admin@smarthr.com" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password"
+                 placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+
+        <a href="#" class="forgot-link" onclick="return false;" tabindex="-1">Forgot password?</a>
+
+        <button type="submit" class="btn-signin">
+          <i class="bi bi-arrow-right-circle me-2"></i>Sign In
+        </button>
+      </form>
+
+      <div class="divider">Quick Access</div>
+
+      <div class="quick-btns">
+        <a class="btn-quick" href="#" onclick="quickLogin('admin','Admin@123');return false;">
+          <i class="bi bi-shield-lock d-block mb-1"></i>Admin Demo
+        </a>
+        <a class="btn-quick" href="#" onclick="quickLogin('employee','Employee@123');return false;">
+          <i class="bi bi-person d-block mb-1"></i>Employee
+        </a>
+        <a class="btn-quick" href="/guest">
+          <i class="bi bi-eye d-block mb-1"></i>Guest Mode
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ── Quick login helper ── */
+function quickLogin(user, pass) {
+  document.getElementById('identifier').value = user;
+  document.getElementById('password').value   = pass;
+  document.querySelector('form').submit();
+}
+
+/* ═══════════════════════════════════════════════════
+   Three.js Particle Field Background
+═══════════════════════════════════════════════════ */
+(function initParticleField() {
+  var canvas   = document.getElementById('loginCanvas');
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  var scene  = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 80;
+
+  /* Particles */
+  var COUNT   = 1400;
+  var geometry = new THREE.BufferGeometry();
+  var positions = new Float32Array(COUNT * 3);
+  var velocities = [];
+
+  for (var i = 0; i < COUNT; i++) {
+    positions[i * 3]     = (Math.random() - 0.5) * 200;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 120;
+    velocities.push({
+      x: (Math.random() - 0.5) * 0.012,
+      y: (Math.random() - 0.5) * 0.012,
+      z: (Math.random() - 0.5) * 0.006
+    });
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  var material = new THREE.PointsMaterial({
+    color: 0x00d4ff,
+    size: 0.55,
+    transparent: true,
+    opacity: 0.55,
+    sizeAttenuation: true
+  });
+
+  var particles = new THREE.Points(geometry, material);
+  scene.add(particles);
+
+  /* Secondary purple layer */
+  var geo2  = new THREE.BufferGeometry();
+  var pos2  = new Float32Array(600 * 3);
+  for (var j = 0; j < 600; j++) {
+    pos2[j * 3]     = (Math.random() - 0.5) * 200;
+    pos2[j * 3 + 1] = (Math.random() - 0.5) * 200;
+    pos2[j * 3 + 2] = (Math.random() - 0.5) * 100;
+  }
+  geo2.setAttribute('position', new THREE.BufferAttribute(pos2, 3));
+  var mat2 = new THREE.PointsMaterial({ color: 0x7c3aed, size: 0.4, transparent: true, opacity: 0.35 });
+  scene.add(new THREE.Points(geo2, mat2));
+
+  /* Floating geometric ring */
+  var torusGeo = new THREE.TorusGeometry(28, 0.25, 8, 80);
+  var torusMat = new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.06 });
+  var torus    = new THREE.Mesh(torusGeo, torusMat);
+  torus.rotation.x = 0.4;
+  scene.add(torus);
+
+  var torus2Geo = new THREE.TorusGeometry(18, 0.15, 8, 60);
+  var torus2Mat = new THREE.MeshBasicMaterial({ color: 0x7c3aed, transparent: true, opacity: 0.08 });
+  var torus2    = new THREE.Mesh(torus2Geo, torus2Mat);
+  torus2.rotation.y = 0.6;
+  scene.add(torus2);
+
+  /* Mouse parallax */
+  var mouse = { x: 0, y: 0 };
+  document.addEventListener('mousemove', function(e){
+    mouse.x = (e.clientX / window.innerWidth  - 0.5) * 0.3;
+    mouse.y = (e.clientY / window.innerHeight - 0.5) * 0.3;
+  });
+
+  /* Animate */
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+
+    /* Drift particles */
+    for (var k = 0; k < COUNT; k++) {
+      positions[k * 3]     += velocities[k].x;
+      positions[k * 3 + 1] += velocities[k].y;
+      positions[k * 3 + 2] += velocities[k].z;
+      if (Math.abs(positions[k * 3])     > 100) velocities[k].x *= -1;
+      if (Math.abs(positions[k * 3 + 1]) > 100) velocities[k].y *= -1;
+      if (Math.abs(positions[k * 3 + 2]) > 60)  velocities[k].z *= -1;
+    }
+    geometry.attributes.position.needsUpdate = true;
+
+    /* Rotate layers */
+    particles.rotation.y = t * 0.018;
+    particles.rotation.x = t * 0.006;
+    torus.rotation.z     = t * 0.12;
+    torus2.rotation.x    = t * 0.09;
+
+    /* Camera parallax */
+    camera.position.x += (mouse.x * 6 - camera.position.x) * 0.04;
+    camera.position.y += (-mouse.y * 4 - camera.position.y) * 0.04;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', function(){
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+</script>
+</body>
+</html>

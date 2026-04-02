@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}Feedback & Sentiment{% endblock %}
+{% block nav_title %}Feedback & Sentiment{% endblock %}
+
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 fade-in">
+  <div>
+    <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;margin:0;">
+      <i class="bi bi-chat-heart me-2" style="color:var(--color-primary);"></i>Feedback &amp; Sentiment
+    </h2>
+    <p style="font-size:0.82rem;color:var(--color-text-muted);margin:0.2rem 0 0;">
+      VADER NLP engine scores employee feedback on a −1 → +1 compound scale.
+    </p>
+  </div>
+</div>
+
+<div class="row g-3">
+
+  <!-- ── Submit Feedback ── -->
+  <div class="col-lg-4 fade-in">
+    <div class="card border-0 h-100">
+      <div class="card-header">
+        <i class="bi bi-stars me-2" style="color:var(--color-primary);"></i>Submit Feedback
+      </div>
+      <div class="card-body d-flex flex-column">
+        <div class="mb-3">
+          <label class="form-label">Employee ID</label>
+          <input type="number" id="feedbackEmpId" class="form-control" min="1" placeholder="e.g. 1">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Submitted By</label>
+          <select id="feedbackBy" class="form-select">
+            <option value="manager">Manager</option>
+            <option value="self">Self</option>
+            <option value="peer">Peer</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Feedback Text</label>
+          <textarea id="feedbackText" class="form-control" rows="6"
+            placeholder="Write a performance review, suggestion, or note about the employee…"></textarea>
+        </div>
+        <div id="feedbackMsg" style="min-height:18px;font-size:0.8rem;" class="mb-3"></div>
+        <button class="btn btn-primary w-100" onclick="submitFeedback()">
+          <i class="bi bi-stars me-1"></i>Analyze &amp; Save
+        </button>
+
+        <!-- Sentiment scale info -->
+        <div class="mt-3 glass-card p-3" style="font-size:0.75rem;color:var(--color-text-muted);">
+          <div style="font-weight:600;color:var(--color-text);margin-bottom:0.4rem;">
+            <i class="bi bi-info-circle me-1" style="color:var(--color-primary);"></i>VADER Sentiment Scale
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span style="color:#f87171;">−1.0 Negative</span>
+            <span style="color:#fbbf24;">0.0 Neutral</span>
+            <span style="color:#34d399;">+1.0 Positive</span>
+          </div>
+          <div style="height:6px;border-radius:3px;background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981);"></div>
+          <div style="margin-top:0.5rem;">Threshold: ≥ 0.05 = Positive · ≤ −0.05 = Negative</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Analytics + Mood Trend ── -->
+  <div class="col-lg-8 fade-in" style="animation-delay:0.08s;">
+    <div class="card border-0 mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-graph-up-arrow me-2" style="color:var(--color-success);"></i>Mood Trend by Department</span>
+        <button class="btn btn-ghost btn-sm" onclick="loadFeedbacks()">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap"><canvas id="moodTrendChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Sentiment distribution -->
+    <div class="row g-3 mb-3">
+      <div class="col-4">
+        <div class="glass-card p-3 text-center">
+          <div style="font-size:1.5rem;margin-bottom:0.25rem;">😊</div>
+          <div id="posCount" style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;color:#34d399;">—</div>
+          <div style="font-size:0.7rem;color:var(--color-text-muted);">Positive</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="glass-card p-3 text-center">
+          <div style="font-size:1.5rem;margin-bottom:0.25rem;">😐</div>
+          <div id="neuCount" style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;color:#fbbf24;">—</div>
+          <div style="font-size:0.7rem;color:var(--color-text-muted);">Neutral</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="glass-card p-3 text-center">
+          <div style="font-size:1.5rem;margin-bottom:0.25rem;">😟</div>
+          <div id="negCount" style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;color:#f87171;">—</div>
+          <div style="font-size:0.7rem;color:var(--color-text-muted);">Negative</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent feedbacks list -->
+    <div class="card border-0">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-list-ul me-2" style="color:#a78bfa;"></i>Recent Feedbacks</span>
+        <div class="d-flex gap-2 align-items-center">
+          <input type="number" id="feedbackFilterId" class="form-control form-control-sm"
+                 placeholder="Filter by Employee ID" style="width:170px;" oninput="loadFeedbacks()">
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div id="feedbackList" style="max-height:280px;overflow-y:auto;">
+          <div class="p-4">
+            <div class="skeleton skeleton-row mb-2"></div>
+            <div class="skeleton skeleton-row mb-2"></div>
+            <div class="skeleton skeleton-row"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  loadFeedbacks();
+  renderMoodTrendChart();
+});
+
+/* ── Submit feedback ── */
+async function submitFeedback() {
+  var msgEl = document.getElementById('feedbackMsg');
+  var empId = document.getElementById('feedbackEmpId').value;
+  var text  = document.getElementById('feedbackText').value.trim();
+  var by    = document.getElementById('feedbackBy').value;
+
+  if (!empId || !text) {
+    msgEl.innerHTML = '<span style="color:var(--color-danger);">Employee ID and feedback text are required.</span>';
+    return;
+  }
+  if (text.length > 2000) {
+    msgEl.innerHTML = '<span style="color:var(--color-danger);">Feedback must be under 2000 characters.</span>';
+    return;
+  }
+
+  msgEl.innerHTML = '<span style="color:var(--color-primary);"><i class="bi bi-arrow-repeat spin me-1"></i>Analyzing sentiment…</span>';
+
+  var r = await fetch('/api/analytics/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ employee_id: parseInt(empId), text: text, submitted_by: by })
+  });
+  var d = await r.json();
+
+  if (!r.ok) {
+    msgEl.innerHTML = '<span style="color:var(--color-danger);">' + SmartHR.escapeHtml(d.error || 'Failed') + '</span>';
+    return;
+  }
+
+  var sentColor = d.sentiment_label === 'POSITIVE' ? '#34d399' : d.sentiment_label === 'NEGATIVE' ? '#f87171' : '#fbbf24';
+  var sentEmoji = d.sentiment_label === 'POSITIVE' ? '😊' : d.sentiment_label === 'NEGATIVE' ? '😟' : '😐';
+  msgEl.innerHTML = '<div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);">' +
+    '<span style="font-size:1rem;">' + sentEmoji + '</span>' +
+    '<span style="font-size:0.8rem;color:' + sentColor + ';font-weight:600;">' + d.sentiment_label + '</span>' +
+    '<span style="font-size:0.78rem;color:var(--color-text-muted);">· Score: ' + d.sentiment_score.toFixed(3) + '</span>' +
+  '</div>';
+
+  document.getElementById('feedbackText').value = '';
+  loadFeedbacks();
+}
+
+/* ── Load feedback list ── */
+async function loadFeedbacks() {
+  var filterId = document.getElementById('feedbackFilterId').value;
+  var url = '/api/analytics/feedback' + (filterId ? '?employee_id=' + filterId : '');
+  try {
+    var r    = await fetch(url);
+    var data = await r.json();
+    renderFeedbackList(data);
+    computeSentimentCounts(data);
+  } catch(e) {}
+}
+
+function renderFeedbackList(data) {
+  var listEl = document.getElementById('feedbackList');
+  if (!data.length) {
+    listEl.innerHTML = '<div class="empty-state py-3"><i class="bi bi-chat-dots"></i><p>No feedback records found.</p></div>';
+    return;
+  }
+  listEl.innerHTML = data.slice(0, 30).map(function(f) {
+    var sentColor = f.sentiment_label === 'POSITIVE' ? '#34d399' : f.sentiment_label === 'NEGATIVE' ? '#f87171' : '#fbbf24';
+    var sentBg    = f.sentiment_label === 'POSITIVE' ? 'rgba(16,185,129,0.08)' : f.sentiment_label === 'NEGATIVE' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)';
+    return '<div style="padding:0.875rem 1.25rem;border-bottom:1px solid var(--color-border-2);">' +
+      '<div class="d-flex align-items-start gap-2">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div class="d-flex align-items-center gap-2 mb-1">' +
+            '<span style="font-weight:600;font-size:0.84rem;color:var(--color-text);">Employee #' + f.employee_id + '</span>' +
+            '<span style="font-size:0.65rem;color:var(--color-text-muted);">by ' + SmartHR.escapeHtml(f.submitted_by || 'manager') + '</span>' +
+          '</div>' +
+          '<div style="font-size:0.8rem;color:var(--color-text-muted);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' +
+            SmartHR.escapeHtml(f.text) +
+          '</div>' +
+        '</div>' +
+        '<div style="flex-shrink:0;text-align:right;">' +
+          '<span class="badge" style="background:' + sentBg + ';color:' + sentColor + ';">' + (f.sentiment_label || 'N/A') + '</span>' +
+          '<div style="font-size:0.68rem;color:var(--color-text-muted);margin-top:3px;">' + (f.sentiment_score ? f.sentiment_score.toFixed(2) : '—') + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function computeSentimentCounts(data) {
+  var pos = 0, neu = 0, neg = 0;
+  data.forEach(function(f) {
+    if (f.sentiment_label === 'POSITIVE') pos++;
+    else if (f.sentiment_label === 'NEGATIVE') neg++;
+    else neu++;
+  });
+  document.getElementById('posCount').textContent = pos;
+  document.getElementById('neuCount').textContent = neu;
+  document.getElementById('negCount').textContent = neg;
+}
+
+/* ── Mood trend chart (by department) ── */
+async function renderMoodTrendChart() {
+  try {
+    var r = await fetch('/api/analytics/sentiment/departments');
+    var d = await r.json();
+    var ctx = document.getElementById('moodTrendChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: d.map(function(x){ return x.department; }),
+        datasets: [{
+          label: 'Avg Sentiment Score',
+          data: d.map(function(x){ return x.avg_sentiment; }),
+          backgroundColor: d.map(function(x){
+            return x.avg_sentiment > 0.1 ? 'rgba(16,185,129,0.75)'
+                 : x.avg_sentiment < -0.1 ? 'rgba(239,68,68,0.7)'
+                 : 'rgba(245,158,11,0.7)';
+          }),
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(10,15,30,0.9)',
+            titleColor: '#e2e8f0',
+            bodyColor: '#94a3b8',
+            padding: 10,
+            cornerRadius: 8
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } },
+          y: {
+            min: -1, max: 1,
+            ticks: { color: '#94a3b8' },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          }
+        }
+      }
+    });
+  } catch(e) {}
+}
+</script>
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+</style>
+{% endblock %}
