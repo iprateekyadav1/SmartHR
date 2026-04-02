@@ -330,6 +330,7 @@ function chartGridColor() {
 }
 
 function darkChartDefaults() {
+  var isLight = document.documentElement.getAttribute('data-theme') === 'light';
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -339,13 +340,14 @@ function darkChartDefaults() {
         labels: { color: chartTextColor(), font: { family: "'Inter', sans-serif", size: 11 }, padding: 12, boxWidth: 10 }
       },
       tooltip: {
-        backgroundColor: 'rgba(10,15,30,0.9)',
-        borderColor: 'rgba(0,212,255,0.2)',
+        backgroundColor: isLight ? 'rgba(255,255,255,0.98)' : 'rgba(10,15,30,0.9)',
+        borderColor: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(0,212,255,0.2)',
         borderWidth: 1,
-        titleColor: '#e2e8f0',
-        bodyColor: '#94a3b8',
+        titleColor: isLight ? '#1e293b' : '#e2e8f0',
+        bodyColor: isLight ? '#64748b' : '#94a3b8',
         padding: 10,
-        cornerRadius: 8
+        cornerRadius: 8,
+        displayColors: false
       }
     },
     scales: {
