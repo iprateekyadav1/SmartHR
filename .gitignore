@@ -14,8 +14,8 @@ build/
 venv/
 env/
 
-# Database (SQLite — use seed.py to regenerate)
-*.db
+# Database (SQLite)
+# smarthr.db is committed so Render has seeded data without running seed.py each boot
 *.sqlite3
 
 # Uploads (user-uploaded resumes)

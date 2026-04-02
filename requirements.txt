@@ -10,3 +10,4 @@ werkzeug
 python-docx
 PyPDF2
 faker
+gunicorn
